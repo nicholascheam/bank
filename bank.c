@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <windows.h>
+#include <unistd.h>
+#include <sys/stat.h>
+
 char option[30];
 
 void text_menu(){
@@ -19,22 +21,63 @@ void text_menu(){
 }
 
 void create_account(){
-    int *account_type;
+    // user input
+    int account_type;
     printf("Enter Your Name:");
     char name[50];
     scanf("%s", name);
     printf("Enter Your Identification Number(ID):");
     char id[20];
     scanf("%s", id);
-    printf("Enter the Type of Account (1: Savings/2: Checking):");
+    printf("Enter the Type of Account (1: Savings/2: Current):");
     scanf("%d", &account_type);
+    if (account_type != 1 && account_type != 2){
+        printf("Invalid Account Type Selected. Please try again.\n");
+        return;
+    }
+    printf("Enter a 4 Digit PIN for your Account:");
+    int pin;
+    scanf("%d", &pin);
+    if (pin < 1000 || pin > 9999){
+        printf("Invalid PIN entered. Please try again.\n");
+        return;
+    }
+
+    // account logging
+    char account_type_name[20];
+    if (account_type == 1){
+        strcpy(account_type_name, "Savings");
+    }
+    else {
+        strcpy(account_type_name, "Current");
+    }
+    char account_file_name[50];
+    sprintf(account_file_name, "database/%d_%s.txt", id, account_type_name);
+    FILE *account_fp = fopen(account_file_name, "w+");
+    if (account_fp == NULL) {
+        printf("Error creating account file!\n");
+        return;
+    }
+    fprintf(account_fp, "Name: %s\nID: %s\nAccount Type: %s\nPIN: %d\nBalance: 0\n", name, id, account_type_name, pin);
+    fclose(account_fp);
+
+    // general logging
     FILE *fp = fopen("database/accounts.txt", "a");
     if (fp == NULL) {
         printf("Error opening file!\n");
         return;
     }
-    fprintf(fp, "%s %s %d\n", name, id, account_type);
+    fprintf(fp, "%s %s %d %d\n", name, id, account_type, pin);
     fclose(fp);
+
+    FILE *log_fp = fopen("database/transactions.log", "a");
+    if (log_fp == NULL) {
+        printf("Error opening log file!\n");
+        return;
+    }
+    fprintf(log_fp, "Account created for %s with ID %s and account type %d\n", name, id, account_type);
+    fclose(log_fp);
+
     printf("Account Created Successfully!\n");
 }
 
@@ -67,12 +110,12 @@ void options(){
         remittance();
     } else if (strcmp(option, "6") == 0 || strcmp(option, "exit") == 0 || strcmp(option, "quit") == 0) {
     const char *message = "Program will exit soon";
-    for (int i = 0; i < 4; i++) {
-        printf("\r%s", message);   // \r returns cursor to start of line
+    for (int i = 0; i < 3; i++) {
+        printf("\r%s", message);
         for (int j = 0; j < i % 4; j++)
             printf(".");
         fflush(stdout);
-        Sleep(600);
+        sleep(1);
     }
     exit(0);
     } else {
@@ -80,6 +123,10 @@ void options(){
     }
 }
 int main(){
+    struct stat st = {0};
+    if (stat("database", &st) == -1) {
+        system("mkdir database");
+    }
     while (1){
         text_menu();
         options();
