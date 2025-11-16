@@ -1,5 +1,0 @@
-Name: dfs
-ID: 1412312
-Account Type: Savings
-PIN: 2132
-Balance: 0

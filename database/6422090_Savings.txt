@@ -1,5 +1,0 @@
-Name: dsfs
-ID: 23411413
-Account Type: Savings
-PIN: 2142
-Balance: 0
