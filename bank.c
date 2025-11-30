@@ -6,7 +6,8 @@
 #include <ctype.h>
 #include <io.h>
 #include <time.h>
-// PROBLEMS: ACCOUNT TYPE NAME AND ACCOUNT TYPE VARIABLE MISMATCHING
+// PROBLEMS: ACCOUNT TYPE NAME AND ACCOUNT TYPE VARIABLE MISMATCHING, IF ID HAS HYPHENS ON THE LAST 4 DIGITS, WILL IT AFFECT THE DELETE ACCOUNT FUNCTION?
+// DELETING ACCOUNT FROM INDEX FILE NOT WORKING PROPERLY
 // FUTURE: DEPOSIT/WITHDRAWAL/REMITTANCE FUNCTIONS
 char option[30];
 void text_menu(){
@@ -20,33 +21,54 @@ void text_menu(){
     printf("6. Exit\n");
     printf("-------------------------------------------\n");
     printf("\nSelect Option: ");
-    scanf("%29s", &option);
+    fgets(option, sizeof(option), stdin);
+    option[strcspn(option, "\n")] = 0;
 }
-
+int cancel_process(char input[]){
+    input[strcspn(input, "\n")] = '\0';
+    if (strlen(input) == 0){
+        printf("Process Cancelled.\n");
+        return 1;
+    }
+    return 0;
+}
+void acccompare(char str[]){
+    str[strcspn(str, "\n")] = '\0';
+    if (strcmp(str, "1") == 0 || strcmp(str, "Savings") == 0 || strcmp(str, "savings") == 0 || strcmp(str, "save") == 0){
+        strcpy(str, "Savings");
+    }
+    else if (strcmp(str, "2") == 0 || strcmp(str, "Current") == 0 || strcmp(str, "current") == 0 || strcmp(str, "curr") == 0) {
+        strcpy(str, "Current");
+    }
+    else {
+        printf("Invalid Account Type Selected. Please try again.\n");
+        str[0] = '\0';
+    }
+}
 void create_account(){
-    int account_type;
-    int account_number;
+    char account_type[20], name[50], id[20], pin_str[10];
+    int account_number, pin, digits, lower, upper;
     char account_type_name[20];
-    char account_file_name_s[50], account_file_name_c[50];
-    char name[50];
-    char id[20], id_temp[20];
-    int pin, digits, lower, upper;
+    char account_file_name_s[50], account_file_name_c[50], final_file_name[60];
     srand(time(NULL));
 
     // user input
+    printf("Press Enter without Keying in Anything to Cancel at any time...\n");
     printf("Enter Your Name: ");
-    scanf(" %49[^\n]", name);
+    fgets(name, sizeof(name), stdin);
+    if (cancel_process(name)) return;
     printf("Enter Your Identification Number(ID): ");
-    scanf("%19s", id);
+    fgets(id, sizeof(id), stdin);
+    if (cancel_process(id)) return;
     printf("Enter the Type of Account (1: Savings/2: Current): ");
-    scanf("%d", &account_type);
-    if (account_type != 1 && account_type != 2){
-        printf("Invalid Account Type Selected. Please try again.\n");
-        return;
-    }
+    fgets(account_type, sizeof(account_type), stdin);
+    if (cancel_process(account_type)) return;
+    acccompare(account_type);
+    if(strlen(account_type)==0) return;
     printf("Enter a 4 Digit PIN for your Account: ");
-    scanf("%d", &pin);
-    if (pin < 1000 || pin > 9999){
+    fgets(pin_str, sizeof(pin_str), stdin);
+    if (cancel_process(pin_str)) return;
+    if (sscanf(pin_str, "%d", &pin) != 1 || pin < 1000 || pin > 9999) {
         printf("Invalid PIN entered. Please try again.\n");
         return;
     }
@@ -56,12 +78,7 @@ void create_account(){
     }
     // account logging
 
-    if (account_type == 1){
-        strcpy(account_type_name, "Savings");
-    }
-    else if (account_type == 2){
-        strcpy(account_type_name, "Current");
-    }
+    strcpy(account_type_name, account_type);
 while(1) {
     digits = (rand() % 3) + 7; // 7–9 digits
     lower = 1;
@@ -84,39 +101,18 @@ while(1) {
     if(c) fclose(c);
 }
     printf("Your Bank Account Number is %d, Please Remember it!\n", account_number);
-    // choose correct filename based on type
-    char final_file_name[60];
-    if (account_type == 1) 
-        strcpy(final_file_name, account_file_name_s);
-    else 
-        strcpy(final_file_name, account_file_name_c);
-
     // create file
+    sprintf(final_file_name, "database/%d_%s.txt", account_number, account_type_name);
     FILE *account_fp = fopen(final_file_name, "w+");
-    if (!account_fp) {
-        printf("Error creating account file!\n");
-        return;
-    }
-
     fprintf(account_fp, "Name: %s\nID: %s\nAccount Type: %s\nAccount Number: %d\nPIN: %d\nBalance: 0\n", name, id, account_type_name, account_number, pin);
     fclose(account_fp);
 
-
     // general logging
     FILE *fp = fopen("database/accounts.txt", "a");
-    if (fp == NULL) {
-        printf("Error opening file!\n");
-        return;
-    }
-    fprintf(fp,"\"%s\" %s %d %d %d\n", name, id, account_number, account_type, pin);
+    fprintf(fp,"\"%s\" %s %d %s %d\n", name, id, account_number, account_type_name, pin);
     fclose(fp);
-
     FILE *log_fp = fopen("database/transactions.log", "a");
-    if (log_fp == NULL) {
-        printf("Error opening log file!\n");
-        return;
-    }
-    fprintf(log_fp, "Account created for %s with ID %s and account type %d\n", name, id, account_type);
+    fprintf(log_fp, "Account created for %s with ID %s and account type %s\n", name, id, account_type_name);
     fclose(log_fp);
 
     printf("Account Created Successfully!\n");
@@ -125,16 +121,14 @@ while(1) {
 void delete_account(){
     char name[50], name_temp[50], name_input[50];
     char account_type_name[20];
-    char account_file_name[50];
+    char account_file_name[60];
     char number[20], number_temp[20];
     char id[20], id_temp[20], id4[5];
-    char account_type[20], account_type_temp_copy[20];
-    int account_type_temp;
+    char account_type[20], type_temp[20];
     int pin, pin_temp;
-    char line[100];
+    char line[200];
     int extracted_pin = 0;
-    // missing last 4 id ending digits check and retreive all banking accounts from index file
-    // retreive name and id for logging, done
+
     printf("Retrieving account information...\n");
     FILE *fp_list = fopen("database/accounts.txt", "r");
     if (fp_list == NULL) {
@@ -143,117 +137,88 @@ void delete_account(){
     }
 
     while (fgets(line, sizeof(line), fp_list)) {
-        if(sscanf(line, "\"%49[^\"]\" %19s %19s %d %d", name_temp, id_temp, number_temp, &account_type_temp, &pin_temp) == 5) {
+        if(sscanf(line, "\"%49[^\"]\" %19s %19s %19s %d", name_temp, id_temp, number_temp, &type_temp, &pin_temp) == 5) {
             printf("%s\n", number_temp);
         }
     }
 
     fclose(fp_list);
+    printf("Press Enter without Keying in Anything to Cancel at any time...\n");
     printf("Enter Your Bank Number to Delete Account: ");
-    scanf("%19s", &number);
+    fgets(number, sizeof(number), stdin);
+    if (cancel_process(number)) return;
     printf("Enter the Type of Account to Delete (1: Savings/2: Current): ");
-    scanf("%19s", &account_type);
-    if (strcmp(account_type, "1") == 0 || strcmp(account_type, "Savings") == 0 || strcmp(account_type, "savings") == 0 || strcmp(account_type, "save") == 0){
-        strcpy(account_type_name, "Savings");
-    }
-    else if (strcmp(account_type, "2") == 0 || strcmp(account_type, "Current") == 0 || strcmp(account_type, "current") == 0 || strcmp(account_type, "curr") == 0) {
-        strcpy(account_type_name, "Current");
-    }
-    else {
-        printf("Invalid Account Type Selected. Please try again.\n");
-        return;
-    }
+    fgets(account_type, sizeof(account_type), stdin);
+    if (cancel_process(account_type)) return;
+    acccompare(account_type);
+    if(strlen(account_type)==0) return;
+    strcpy(account_type_name, account_type);
     sprintf(account_file_name, "database/%s_%s.txt", number, account_type_name);
-    FILE *name_fp = fopen(account_file_name, "r");
-    if (name_fp == NULL) {
+    // get name and id from account file, done
+    FILE *account_fp = fopen(account_file_name, "r");
+    if (account_fp == NULL) {
         printf("Account doesn't exist!\n");
         return;
     }
-    while(fgets(line, sizeof(line), name_fp)) {
+    while(fgets(line, sizeof(line), account_fp)) {
         if (sscanf(line, "Name: %49[^\n]", name) == 1) {
             break;
         }
     }
-    while(fgets(line, sizeof(line), name_fp)) {
-        if (sscanf(line, "ID: %s", id) == 1) {
+    while(fgets(line, sizeof(line), account_fp)) {
+        if (sscanf(line, "ID: %19s", id) == 1) {
             break;
         }
     }
-
-        fclose(name_fp);
+    while(fgets(line, sizeof(line), account_fp)) {
+        if (sscanf(line, "PIN: %d", &extracted_pin) == 1) {
+            break;
+        }
+    }
+        fclose(account_fp);
     printf("Enter Your Name As Confirmation: ");
-    scanf(" %49[^\n]", name_input);
-    for (int i = 0; name[i]; i++){
-        name[i] = tolower(name[i]);
+    fgets(name_input, sizeof(name_input), stdin);
+    name_input[strcspn(name_input, "\n")] = '\0';
+    for (int i = 0; name_input[i]; i++){
+        name_input[i] = tolower(name_input[i]);
     }
     if (strcmp(name, name_input) != 0){
         printf("Name does not match our records. Account deletion failed.\n");
         return;
     }
-    else {
-        printf("Name found in the database.\n");
-    }
-    // not done yet
+
     printf("Enter The Last 4 Digits of Your Identification Number(ID): ");
-    scanf("%4s", id4);
-    if (strcmp(id + strlen(id) - 4, id4) == 0) {
-        printf("ID digits verified.\n");
-    } else {
+    fgets(id4, sizeof(id4), stdin);
+    id4[strcspn(id4, "\n")] = '\0';
+    if (strlen(id) < 4 || strcmp(id + strlen(id) - 4, id4) != 0) {
         printf("ID digits do not match our records. Account deletion failed.\n");
         return;
     }
 
-    // check if account exists
-    FILE *file_check = fopen(account_file_name, "r");
-    if (file_check == NULL) {
-        printf("Account doesn't exist!\n");
-        fclose(file_check);
-        return;
-    }
-    else {
-        printf("Account found!\n");
-        fclose(file_check);
-    }
-
     printf("Enter your 4 Digit PIN: ");
     scanf("%d", &pin);
-
-    // read PIN from account file, done
-    FILE *pin_fp = fopen(account_file_name, "r");
-    if (pin_fp == NULL) {
-        printf("Account doesn't exist!\n");
+    while(getchar() != '\n');
+    if (pin != extracted_pin){
+        printf("Incorrect PIN. Account deletion failed.\n");
         return;
     }
-
-    while(fgets(line, sizeof(line), pin_fp)) {
-        if (sscanf(line, "PIN: %d", &extracted_pin) == 1) {
-            break;
-        }
-    }
-    fclose(pin_fp);
-
-    if (extracted_pin == pin){
-        remove(account_file_name);
-        printf("Account deleted successfully!\n");
-    }
-    else {
-        printf("Incorrect PIN. Account deletion failed.\n");
-    }
+    remove(account_file_name);
+    printf("Account deleted successfully!\n");
 
     // general logging
     FILE *fp_del = fopen("database/accounts.txt", "r");
     FILE *temp_fp = fopen("database/temp_accounts.txt", "w");
-    if (fp_del == NULL || temp_fp == NULL) {
+    if (!fp_del || !temp_fp) {
         printf("Error opening file!\n");
         return;
     }
 
-    while(fscanf(fp_del, "\"%49[^\"]\" %19s %19s %19s %d", name_temp, id_temp, number_temp, account_type_temp_copy, &pin_temp) == 5) {
-
-    if(strcmp(number_temp, number) == 0 && strcmp(account_type_temp_copy, account_type) == 0)
-        continue;
-
-    fprintf(temp_fp, "\"%s\" %s %s %s %d\n", name_temp, id_temp, number_temp, account_type_temp_copy, pin_temp);
+    while(fgets(line, sizeof(line), fp_del)) {
+    if (sscanf(line, "\"%49[^\"]\" %19s %19s %19s %d", name_temp, id_temp, number_temp, type_temp, &pin_temp) == 5) {
+        if(strcmp(number_temp, number) == 0 && strcmp(type_temp, account_type_name) == 0)
+            continue;
+    }
+    fprintf(temp_fp, "\"%s\" %s %s %s %d\n", name_temp, id_temp, number_temp, type_temp, pin_temp);
 }
     fclose(fp_del);
     fclose(temp_fp);
@@ -261,12 +226,11 @@ void delete_account(){
     rename("database/temp_accounts.txt", "database/accounts.txt");
 
     FILE *log_fp = fopen("database/transactions.log", "a");
-    if (log_fp == NULL) {
-        printf("Error opening log file!\n");
-        return;
+    if (log_fp) {
+        fprintf(log_fp, "Account deleted for %s with ID %s and account type %s\n", name, id, account_type);
+        fclose(log_fp);
     }
-    fprintf(log_fp, "Account deleted for %s with ID %s and account type %s\n", name, id, account_type);
-    fclose(log_fp);
+
 }
 
 void deposit(){

@@ -1,0 +1,6 @@
+Name: hello chat
+ID: 1234-12-5678
+Account Type: Savings
+Account Number: 10007251
+PIN: 1234
+Balance: 0

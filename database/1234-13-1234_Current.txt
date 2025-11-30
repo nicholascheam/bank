@@ -1,5 +1,0 @@
-Name: sdgjk
-ID: 1234-13-1234
-Account Type: Current
-PIN: 1234
-Balance: 0
