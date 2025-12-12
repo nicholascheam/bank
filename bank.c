@@ -104,7 +104,7 @@ while(1) {
     // create file
     sprintf(final_file_name, "database/%d_%s.txt", account_number, account_type_name);
     FILE *account_fp = fopen(final_file_name, "w+");
-    fprintf(account_fp, "Name: %s\nID: %s\nAccount Type: %s\nAccount Number: %d\nPIN: %d\nBalance: 0\n", name, id, account_type_name, account_number, pin);
+    fprintf(account_fp, "Name: %s\nID: %s\nAccount Type: %s\nAccount Number: %d\nPIN: %d\nBalance: RM 0\n", name, id, account_type_name, account_number, pin);
     fclose(account_fp);
 
     // general logging
@@ -234,75 +234,153 @@ void delete_account(){
 }
 
 void deposit(){
-    char amount;
-    char account_number[20], account_type[20];
-    int pin;
+    char account_number[20], account_type[20], account_type_name[50], account_file_name[60];
+    char line[200];
+    char name[50], id[20];
+    int stored_pin = -1, pin;
+    float amount, balance = 0.0;
 
+    printf("Press Enter without Keying in Anything to Cancel at any time...\n");
     printf("Enter Your Account Number: ");
     fgets(account_number, sizeof(account_number), stdin);
+    if (cancel_process(account_number)) return;
     printf("Enter Your Bank Account Type (1: Savings/2: Current): ");
     fgets(account_type, sizeof(account_type), stdin);
+    if (cancel_process(account_type)) return;
+    acccompare(account_type);
+    if(strlen(account_type)==0) return;
+    strcpy(account_type_name, account_type);
     // check if account exists then return if not
+    sprintf(account_file_name,"database/%s_%s.txt", account_number, account_type_name);
+    FILE *fp = fopen(account_file_name, "r");
+    if (fp == NULL) {
+        printf("Account doesn't exist!\n");
+        return;
+    }
+    while(fgets(line, sizeof(line), fp)) {
+        sscanf(line, "Name: %49[^\n]", name);
+        sscanf(line, "ID: %19s", id);
+        sscanf(line, "PIN: %d", &stored_pin);
+        sscanf(line, "Balance: RM %f", &balance);
+    }
+    fclose(fp);
     printf("Enter your PIN: ");
-    fgets(pin, sizeof(pin), stdin);
-    FILE *account_find = fopen("database/");
+    scanf("%d", &pin);
+    while(getchar() != '\n');
+    if (pin != stored_pin){
+        printf("Incorrect PIN.\n");
+        return;
+    }
     printf("Enter the amount to deposit: ");
-    fgets(amount, sizeof(amount), stdin);
+    scanf("%f", &amount);
+    while(getchar() != '\n');
     if (amount <= 0 || amount > 50000){
         printf("Invalid amount entered. Please try again.\n");
         return;
     }
+    balance += amount;
+    fp = fopen(account_file_name, "w");
+    if (fp == NULL) {
+        printf("Error opening account file for reading.\n");
+        return;
+    }
+    fprintf(fp, "Name: %s\nID: %s\nAccount Type: %s\nAccount Number: %s\nPIN: %d\nBalance: RM %.2f\n", name, id, account_type_name, account_number, stored_pin, balance);
+    fclose(fp);
+    printf("Successfully deposited RM %.2f to your account. New balance is RM %.2f\n", amount, balance);
+
+    FILE *log_fp = fopen("database/transactions.log", "a");
+    fprintf(log_fp, "Deposited %.2f to account %s of type %s\n", amount, account_number, account_type_name);
+    fclose(log_fp);
     
 }
 
 void withdrawal(){
-    float amount;
-    char account_number[20], account_type[20];
-    int pin;
+char account_number[20], account_type[20], account_type_name[50], account_file_name[60];
+    char line[200];
+    char name[50], id[20];
+    int stored_pin = -1, pin;
+    float amount, balance = 0.0;
+
+    printf("Press Enter without Keying in Anything to Cancel at any time...\n");
     printf("Enter Your Account Number: ");
     fgets(account_number, sizeof(account_number), stdin);
+    if (cancel_process(account_number)) return;
     printf("Enter Your Bank Account Type (1: Savings/2: Current): ");
     fgets(account_type, sizeof(account_type), stdin);
+    if (cancel_process(account_type)) return;
+    acccompare(account_type);
+    if(strlen(account_type)==0) return;
+    strcpy(account_type_name, account_type);
     // check if account exists then return if not
-
-    //
+    sprintf(account_file_name,"database/%s_%s.txt", account_number, account_type_name);
+    FILE *fp = fopen(account_file_name, "r");
+    if (fp == NULL) {
+        printf("Account doesn't exist!\n");
+        return;
+    }
+    while(fgets(line, sizeof(line), fp)) {
+        sscanf(line, "Name: %49[^\n]", name);
+        sscanf(line, "ID: %19s", id);
+        sscanf(line, "PIN: %d", &stored_pin);
+        sscanf(line, "Balance: RM %f", &balance);
+    }
+    fclose(fp);
     printf("Enter your PIN: ");
-    fgets(pin, sizeof(pin), stdin);
-    // Show the amount of money available before withdrawal
-    // problem: float cannot work with fgets
+    scanf("%d", &pin);
+    while(getchar() != '\n');
+    if (pin != stored_pin){
+        printf("Incorrect PIN.\n");
+        return;
+    }
+    printf("Balance: RM %.2f\n", balance);
     printf("Enter the amount to withdraw: ");
     scanf("%f", &amount);
-    if (amount <= 0){
+    while(getchar() != '\n');
+    if (amount <= 0 || amount > balance){
         printf("Invalid amount entered. Please try again.\n");
         return;
     }
+    balance -= amount;
+    fp = fopen(account_file_name, "w");
+    if (fp == NULL) {
+        printf("Error opening account file for reading.\n");
+        return;
+    }
+    fprintf(fp, "Name: %s\nID: %s\nAccount Type: %s\nAccount Number: %s\nPIN: %d\nBalance: RM %.2f\n", name, id, account_type_name, account_number, stored_pin, balance);
+    fclose(fp);
+    printf("Successfully withdrew RM %.2f to your account. New balance is RM %.2f\n", amount, balance);
+
+    FILE *log_fp = fopen("database/transactions.log", "a");
+    fprintf(log_fp, "Withdrew %.2f to account %s of type %s\n", amount, account_number, account_type_name);
+    fclose(log_fp);
+    
 }
 
 void remittance(){
-    int sender_account_number, sender_account_type;
-    int receiver_account_number, receiver_account_type;
-    int pin;
-    float amount;
+    // int sender_account_number, sender_account_type;
+    // int receiver_account_number, receiver_account_type;
+    // int pin;
+    // float amount;
 
-    printf("Enter the Sender's Account Number: ");
-    fgets(sender_account_number, sizeof(sender_account_number), stdin);
-    printf("Enter the Sender's Bank Account Type (1: Savings/2: Current): ");
-    fgets(sender_account_type, sizeof(sender_account_type), stdin);
-    // check if sender account exists then return if not
-    printf("Enter the Receiver's Account Number: ");
-    fgets(receiver_account_number, sizeof(receiver_account_number), stdin);
-    printf("Enter the Receiver's Bank Account Type (1: Savings/2: Current): ");
-    fgets(receiver_account_type, sizeof(receiver_account_type), stdin);
-    // check if receiver account exists then return if not
+    // printf("Enter the Sender's Account Number: ");
+    // fgets(sender_account_number, sizeof(sender_account_number), stdin);
+    // printf("Enter the Sender's Bank Account Type (1: Savings/2: Current): ");
+    // fgets(sender_account_type, sizeof(sender_account_type), stdin);
+    // // check if sender account exists then return if not
+    // printf("Enter the Receiver's Account Number: ");
+    // fgets(receiver_account_number, sizeof(receiver_account_number), stdin);
+    // printf("Enter the Receiver's Bank Account Type (1: Savings/2: Current): ");
+    // fgets(receiver_account_type, sizeof(receiver_account_type), stdin);
+    // // check if receiver account exists then return if not
 
-    printf("Enter Sender's PIN: ");
-    fgets(pin, sizeof(pin), stdin);
-    printf("Enter the amount to remit: ");
-    fgets(amount, sizeof(amount), stdin);
-    if (amount <= 0){
-        printf("Invalid amount entered. Please try again.\n");
-        return;
-    }
+    // printf("Enter Sender's PIN: ");
+    // fgets(pin, sizeof(pin), stdin);
+    // printf("Enter the amount to remit: ");
+    // fgets(amount, sizeof(amount), stdin);
+    // if (amount <= 0){
+    //     printf("Invalid amount entered. Please try again.\n");
+    //     return;
+    // }
 }
 
 void options(){

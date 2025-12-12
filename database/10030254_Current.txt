@@ -3,4 +3,4 @@ ID: 1234-14-3456
 Account Type: Current
 Account Number: 10030254
 PIN: 1234
-Balance: 0
+Balance: RM 0

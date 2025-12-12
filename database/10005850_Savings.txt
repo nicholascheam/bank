@@ -3,4 +3,4 @@ ID: 1234-12-1234
 Account Type: Savings
 Account Number: 10005850
 PIN: 1234
-Balance: 0
+Balance: RM 0

@@ -3,4 +3,4 @@ ID: 1234-12-4567
 Account Type: Current
 Account Number: 100020321
 PIN: 1234
-Balance: 0
+Balance: RM 0
