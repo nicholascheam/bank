@@ -6,9 +6,7 @@
 #include <ctype.h>
 #include <io.h>
 #include <time.h>
-// PROBLEMS: ACCOUNT TYPE NAME AND ACCOUNT TYPE VARIABLE MISMATCHING, IF ID HAS HYPHENS ON THE LAST 4 DIGITS, WILL IT AFFECT THE DELETE ACCOUNT FUNCTION?
-// DELETING ACCOUNT FROM INDEX FILE NOT WORKING PROPERLY
-// FUTURE: DEPOSIT/WITHDRAWAL/REMITTANCE FUNCTIONS
+
 char option[30];
 void text_menu(){
     printf("\n-------------------------------------------\n");
@@ -24,9 +22,8 @@ void text_menu(){
     fgets(option, sizeof(option), stdin);
     option[strcspn(option, "\n")] = 0;
 }
-int cancel_process(char input[]){
-    input[strcspn(input, "\n")] = '\0';
-    if (strlen(input) == 0){
+int cancel_process(const char input[]){
+    if (input[0] == '\n' || input[0] == '\0'){
         printf("Process Cancelled.\n");
         return 1;
     }
@@ -50,23 +47,26 @@ void create_account(){
     int account_number, pin, digits, lower, upper;
     char account_type_name[20];
     char account_file_name_s[50], account_file_name_c[50], final_file_name[60];
-    srand(time(NULL));
 
     // user input
     printf("Press Enter without Keying in Anything to Cancel at any time...\n");
     printf("Enter Your Name: ");
     fgets(name, sizeof(name), stdin);
+    name[strcspn(name, "\n")] = '\0';
     if (cancel_process(name)) return;
     printf("Enter Your Identification Number(ID): ");
     fgets(id, sizeof(id), stdin);
+    id[strcspn(id, "\n")] = '\0';
     if (cancel_process(id)) return;
     printf("Enter the Type of Account (1: Savings/2: Current): ");
     fgets(account_type, sizeof(account_type), stdin);
+    account_type[strcspn(account_type, "\n")] = '\0';
     if (cancel_process(account_type)) return;
     acccompare(account_type);
     if(strlen(account_type)==0) return;
     printf("Enter a 4 Digit PIN for your Account: ");
     fgets(pin_str, sizeof(pin_str), stdin);
+    pin_str[strcspn(pin_str, "\n")] = '\0';
     if (cancel_process(pin_str)) return;
     if (sscanf(pin_str, "%d", &pin) != 1 || pin < 1000 || pin > 9999) {
         printf("Invalid PIN entered. Please try again.\n");
@@ -137,7 +137,7 @@ void delete_account(){
     }
 
     while (fgets(line, sizeof(line), fp_list)) {
-        if(sscanf(line, "\"%49[^\"]\" %19s %19s %19s %d", name_temp, id_temp, number_temp, &type_temp, &pin_temp) == 5) {
+        if(sscanf(line, "\"%49[^\"]\" %19s %19s %19s %d", name_temp, id_temp, number_temp, type_temp, &pin_temp) == 5) {
             printf("%s\n", number_temp);
         }
     }
@@ -146,9 +146,11 @@ void delete_account(){
     printf("Press Enter without Keying in Anything to Cancel at any time...\n");
     printf("Enter Your Bank Number to Delete Account: ");
     fgets(number, sizeof(number), stdin);
+    number[strcspn(number, "\n")] = '\0';
     if (cancel_process(number)) return;
     printf("Enter the Type of Account to Delete (1: Savings/2: Current): ");
     fgets(account_type, sizeof(account_type), stdin);
+    account_type[strcspn(account_type, "\n")] = '\0';
     if (cancel_process(account_type)) return;
     acccompare(account_type);
     if(strlen(account_type)==0) return;
@@ -202,7 +204,10 @@ void delete_account(){
         printf("Incorrect PIN. Account deletion failed.\n");
         return;
     }
-    remove(account_file_name);
+    if (remove(account_file_name) != 0) {
+        printf("Error deleting account file.\n");
+        return;
+    }
     printf("Account deleted successfully!\n");
 
     // general logging
@@ -244,8 +249,10 @@ void deposit(){
     printf("Enter Your Account Number: ");
     fgets(account_number, sizeof(account_number), stdin);
     if (cancel_process(account_number)) return;
+    account_number[strcspn(account_number, "\n")] = '\0';
     printf("Enter Your Bank Account Type (1: Savings/2: Current): ");
     fgets(account_type, sizeof(account_type), stdin);
+    account_type[strcspn(account_type, "\n")] = '\0';
     if (cancel_process(account_type)) return;
     acccompare(account_type);
     if(strlen(account_type)==0) return;
@@ -281,7 +288,7 @@ void deposit(){
     balance += amount;
     fp = fopen(account_file_name, "w");
     if (fp == NULL) {
-        printf("Error opening account file for reading.\n");
+        printf("Error opening account file for writing.\n");
         return;
     }
     fprintf(fp, "Name: %s\nID: %s\nAccount Type: %s\nAccount Number: %s\nPIN: %d\nBalance: RM %.2f\n", name, id, account_type_name, account_number, stored_pin, balance);
@@ -289,13 +296,17 @@ void deposit(){
     printf("Successfully deposited RM %.2f to your account. New balance is RM %.2f\n", amount, balance);
 
     FILE *log_fp = fopen("database/transactions.log", "a");
+    if (log_fp == NULL) {
+        printf("Error opening log file.\n");
+        return;
+    }
     fprintf(log_fp, "Deposited %.2f to account %s of type %s\n", amount, account_number, account_type_name);
     fclose(log_fp);
     
 }
 
 void withdrawal(){
-char account_number[20], account_type[20], account_type_name[50], account_file_name[60];
+    char account_number[20], account_type[20], account_type_name[50], account_file_name[60];
     char line[200];
     char name[50], id[20];
     int stored_pin = -1, pin;
@@ -304,9 +315,11 @@ char account_number[20], account_type[20], account_type_name[50], account_file_n
     printf("Press Enter without Keying in Anything to Cancel at any time...\n");
     printf("Enter Your Account Number: ");
     fgets(account_number, sizeof(account_number), stdin);
+    account_number[strcspn(account_number, "\n")] = '\0';
     if (cancel_process(account_number)) return;
     printf("Enter Your Bank Account Type (1: Savings/2: Current): ");
     fgets(account_type, sizeof(account_type), stdin);
+    account_type[strcspn(account_type, "\n")] = '\0';
     if (cancel_process(account_type)) return;
     acccompare(account_type);
     if(strlen(account_type)==0) return;
@@ -351,50 +364,144 @@ char account_number[20], account_type[20], account_type_name[50], account_file_n
     printf("Successfully withdrew RM %.2f to your account. New balance is RM %.2f\n", amount, balance);
 
     FILE *log_fp = fopen("database/transactions.log", "a");
+    if (log_fp == NULL) {
+        printf("Error opening log file.\n");
+        return;
+    }
     fprintf(log_fp, "Withdrew %.2f to account %s of type %s\n", amount, account_number, account_type_name);
     fclose(log_fp);
     
 }
 
 void remittance(){
-    // int sender_account_number, sender_account_type;
-    // int receiver_account_number, receiver_account_type;
-    // int pin;
-    // float amount;
+    char sender_account_number[20], sender_account_type[20], sender_account_type_name[50], sender_account_file_name[60];
+    char receiver_account_number[20], receiver_account_type[20], receiver_account_type_name[50], receiver_account_file_name[60];
+    char line_send[200], line_receive[200];
+    char name_send[50], name_receive[50];
+    char id_send[20], id_receive[20];
+    int stored_pin_send = -1, stored_pin_receive = -1, pin;
+    float amount, balance_send = 0.0, balance_receive = 0.0;
+    float fee_rate = 0.0;
+    int same_account;
+    float total_deduction;
 
-    // printf("Enter the Sender's Account Number: ");
-    // fgets(sender_account_number, sizeof(sender_account_number), stdin);
-    // printf("Enter the Sender's Bank Account Type (1: Savings/2: Current): ");
-    // fgets(sender_account_type, sizeof(sender_account_type), stdin);
-    // // check if sender account exists then return if not
-    // printf("Enter the Receiver's Account Number: ");
-    // fgets(receiver_account_number, sizeof(receiver_account_number), stdin);
-    // printf("Enter the Receiver's Bank Account Type (1: Savings/2: Current): ");
-    // fgets(receiver_account_type, sizeof(receiver_account_type), stdin);
-    // // check if receiver account exists then return if not
+    printf("Enter the Sender's Account Number: ");
+    fgets(sender_account_number, sizeof(sender_account_number), stdin);
+    sender_account_number[strcspn(sender_account_number, "\n")] = '\0';
+    if (cancel_process(sender_account_number)) return;
+    printf("Enter the Sender's Bank Account Type (1: Savings/2: Current): ");
+    fgets(sender_account_type, sizeof(sender_account_type), stdin);
+    sender_account_type[strcspn(sender_account_type, "\n")] = '\0';
+    if (cancel_process(sender_account_type)) return;
+    acccompare(sender_account_type);
+    if(strlen(sender_account_type)==0) return;
+    strcpy(sender_account_type_name, sender_account_type);
+    // check if sender account exists then return if not
+    sprintf(sender_account_file_name,"database/%s_%s.txt", sender_account_number, sender_account_type_name);
+    FILE *fp = fopen(sender_account_file_name, "r");
+    if (fp == NULL) {
+        printf("Sender Account doesn't exist!\n");
+        return;
+    }
+    while(fgets(line_send, sizeof(line_send), fp)) {
+        sscanf(line_send, "Name: %49[^\n]", name_send);
+        sscanf(line_send, "ID: %19s", id_send);
+        sscanf(line_send, "PIN: %d", &stored_pin_send);
+        sscanf(line_send, "Balance: RM %f", &balance_send);
+    }
+    fclose(fp);
+    printf("Enter the Receiver's Account Number: ");
+    fgets(receiver_account_number, sizeof(receiver_account_number), stdin);
+    receiver_account_number[strcspn(receiver_account_number, "\n")] = '\0';
+    if (cancel_process(receiver_account_number)) return;
+    printf("Enter the Receiver's Bank Account Type (1: Savings/2: Current): ");
+    fgets(receiver_account_type, sizeof(receiver_account_type), stdin);
+    receiver_account_type[strcspn(receiver_account_type, "\n")] = '\0';
+    if (cancel_process(receiver_account_type)) return;
+    acccompare(receiver_account_type);
+    if(strlen(receiver_account_type)==0) return;
+    strcpy(receiver_account_type_name, receiver_account_type);
+    // check if receiver account exists then return if not
+    sprintf(receiver_account_file_name,"database/%s_%s.txt", receiver_account_number, receiver_account_type_name);
+    FILE *fp_r = fopen(receiver_account_file_name, "r");
+    if (fp_r == NULL) {
+        printf("Receiver Account doesn't exist!\n");
+        return;
+    }
+    while(fgets(line_receive, sizeof(line_receive), fp_r)) {
+        sscanf(line_receive, "Name: %49[^\n]", name_receive);
+        sscanf(line_receive, "ID: %19s", id_receive);
+        sscanf(line_receive, "PIN: %d", &stored_pin_receive);
+        sscanf(line_receive, "Balance: RM %f", &balance_receive);
+    }
+    fclose(fp_r);
 
-    // printf("Enter Sender's PIN: ");
-    // fgets(pin, sizeof(pin), stdin);
-    // printf("Enter the amount to remit: ");
-    // fgets(amount, sizeof(amount), stdin);
-    // if (amount <= 0){
-    //     printf("Invalid amount entered. Please try again.\n");
-    //     return;
-    // }
+
+    printf("Enter Sender's PIN: ");
+    scanf("%d", &pin);
+    while(getchar() != '\n');
+    if (pin != stored_pin_send){
+        printf("Incorrect PIN.\n");
+        return;
+    }
+    printf("Enter the amount to remit: ");
+    scanf("%f", &amount);
+    while(getchar() != '\n');
+    if (amount <= 0){
+        printf("Invalid amount entered. Please try again.\n");
+        return;
+    }
+    same_account = (strcmp(sender_account_number, receiver_account_number) == 0 && strcmp(sender_account_type_name, receiver_account_type_name) == 0);
+    if (!same_account){
+        if (strcmp(sender_account_type_name, "Savings") == 0 && strcmp(receiver_account_type_name, "Current") == 0){
+            fee_rate = 0.02;
+        }
+        else if (strcmp(sender_account_type_name, "Current") == 0 && strcmp(receiver_account_type_name, "Savings") == 0){
+            fee_rate = 0.03;
+        }
+    }
+    total_deduction = amount * (1 + fee_rate);
+    if (total_deduction > balance_send){
+        printf("Insufficient funds in sender's account including fees. Please try again.\n");
+        return;
+    }
+    balance_send -= total_deduction;
+    balance_receive += amount;
+    fp = fopen(sender_account_file_name, "w");
+    if (fp == NULL) {
+        printf("Error opening sender account file for writing.\n");
+        return;
+    }
+    fprintf(fp, "Name: %s\nID: %s\nAccount Type: %s\nAccount Number: %s\nPIN: %d\nBalance: RM %.2f\n", name_send, id_send, sender_account_type_name, sender_account_number, stored_pin_send, balance_send);
+    fclose(fp);
+    fp_r = fopen(receiver_account_file_name, "w");
+    if (fp_r == NULL) {
+        printf("Error opening receiver account file for reading.\n");
+        return;
+    }
+    fprintf(fp_r, "Name: %s\nID: %s\nAccount Type: %s\nAccount Number: %s\nPIN: %d\nBalance: RM %.2f\n", name_receive, id_receive, receiver_account_type_name, receiver_account_number, stored_pin_receive, balance_receive);
+    fclose(fp_r);
+    printf("Successfully remitted RM %.2f from account %s to account %s.\n", amount, sender_account_number, receiver_account_number);
+    FILE *log_fp = fopen("database/transactions.log", "a");
+    if (log_fp == NULL) {
+        printf("Error opening log file.\n");
+        return;
+    }
+    fprintf(log_fp, "Remitted %.2f from account %s of type %s to account %s of type %s, fee %.2f\n", amount, sender_account_number, sender_account_type_name, receiver_account_number, receiver_account_type_name, amount * fee_rate);
+    fclose(log_fp);
 }
-
 void options(){
-    if (strcmp(option, "1") == 0 || strcmp(option, "create") == 0 || strcmp(option, "new") == 0 || strcmp(option, "make") == 0) {
+    if (strcmp(option, "1") == 0 || strcmp(option, "create") == 0 || strcmp(option, "new") == 0 || strcmp(option, "make") == 0 || strcmp(option, "open") == 0 || strcmp(option, "add") == 0) {
         create_account();
-    } else if (strcmp(option, "2") == 0 || strcmp(option, "delete") == 0 || strcmp(option, "remove") == 0) {
+    } else if (strcmp(option, "2") == 0 || strcmp(option, "delete") == 0 || strcmp(option, "remove") == 0 || strcmp(option, "close") == 0 || strcmp(option, "del") == 0 || strcmp(option, "rm") == 0) {
         delete_account();
-    } else if (strcmp(option, "3") == 0 || strcmp(option, "deposit") == 0) {
+    } else if (strcmp(option, "3") == 0 || strcmp(option, "deposit") == 0 || strcmp(option, "addfund") == 0 || strcmp(option, "addfunds") == 0 || strcmp(option, "add money") == 0 || strcmp(option, "addmoney") == 0 || strcmp(option, "topup") == 0 || strcmp(option, "top up") == 0 || strcmp(option, "fund") == 0 || strcmp(option, "funds") == 0) {
         deposit();
-    } else if (strcmp(option, "4") == 0 || strcmp(option, "withdraw") == 0 || strcmp(option, "withdrawal") == 0) {
+    } else if (strcmp(option, "4") == 0 || strcmp(option, "withdraw") == 0 || strcmp(option, "withdrawal") == 0 || strcmp(option, "takeout") == 0 || strcmp(option, "take out") == 0 || strcmp(option, "removefund") == 0 || strcmp(option, "removefunds") == 0 || strcmp(option, "remove money") == 0 || strcmp(option, "removemoney") == 0) {
         withdrawal();
-    } else if (strcmp(option, "5") == 0 || strcmp(option, "remit") == 0 || strcmp(option, "remittance") == 0) {
+    } else if (strcmp(option, "5") == 0 || strcmp(option, "remit") == 0 || strcmp(option, "remittance") == 0 || strcmp(option, "transfer") == 0 || strcmp(option, "sendmoney") == 0 || strcmp(option, "send money") == 0 || strcmp(option, "pay") == 0 || strcmp(option, "payment") == 0 || strcmp(option, "paymoney") == 0 || strcmp(option, "pay money") == 0) {
         remittance();
-    } else if (strcmp(option, "6") == 0 || strcmp(option, "exit") == 0 || strcmp(option, "quit") == 0) {
+    } else if (strcmp(option, "6") == 0 || strcmp(option, "exit") == 0 || strcmp(option, "quit") == 0 || strcmp(option, "closeapp") == 0 || strcmp(option, "close app") == 0 || strcmp(option, "bye") == 0 || strcmp(option, "goodbye") == 0) {
     const char *message = "Program will exit soon";
     for (int i = 0; i < 3; i++) {
         printf("\r%s", message);
@@ -409,6 +516,7 @@ void options(){
     }
 }
 int main(){
+    srand(time(NULL));
     struct stat st = {0};
     if (stat("database", &st) == -1) {
         system("mkdir database");

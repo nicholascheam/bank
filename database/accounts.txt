@@ -1,6 +1,0 @@
-"eden" 1234-12-1234 10005850 Savings 1234
-"sean liew" 1234-13-2345 10023688 Current 1234
-"dicks balls" 1234-14-3456 10030254 Current 1234
-"balls hanging" 1234-12-4567 100020321 Current 1234
-"hello chat" 1234-12-5678 10007251 Savings 1234
-"hello hi" 1234-12-6789 10025089 Savings 1234

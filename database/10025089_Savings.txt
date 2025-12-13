@@ -1,6 +1,0 @@
-Name: hello hi
-ID: 1234-12-6789
-Account Type: Savings
-Account Number: 10025089
-PIN: 1234
-Balance: RM 0
