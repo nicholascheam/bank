@@ -1,10 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <windows.h>
-#include <sys/stat.h>
 #include <ctype.h>
-#include <io.h>
 #include <time.h>
 
 char option[30];
@@ -481,7 +478,7 @@ void remittance(){
     }
     fprintf(fp_r, "Name: %s\nID: %s\nAccount Type: %s\nAccount Number: %s\nPIN: %d\nBalance: RM %.2f\n", name_receive, id_receive, receiver_account_type_name, receiver_account_number, stored_pin_receive, balance_receive);
     fclose(fp_r);
-    printf("Successfully remitted RM %.2f from account %s to account %s.\n", amount, sender_account_number, receiver_account_number);
+    printf("Successfully remitted RM %.2f from account %s to account %s, fee %.2f\n", amount, sender_account_number, receiver_account_number, amount * fee_rate);
     FILE *log_fp = fopen("database/transactions.log", "a");
     if (log_fp == NULL) {
         printf("Error opening log file.\n");
@@ -489,6 +486,10 @@ void remittance(){
     }
     fprintf(log_fp, "Remitted %.2f from account %s of type %s to account %s of type %s, fee %.2f\n", amount, sender_account_number, sender_account_type_name, receiver_account_number, receiver_account_type_name, amount * fee_rate);
     fclose(log_fp);
+}
+void sleep_seconds(int seconds) {
+    clock_t start_time = clock();
+    while (clock() < start_time + seconds * CLOCKS_PER_SEC);
 }
 void options(){
     if (strcmp(option, "1") == 0 || strcmp(option, "create") == 0 || strcmp(option, "new") == 0 || strcmp(option, "make") == 0 || strcmp(option, "open") == 0 || strcmp(option, "add") == 0) {
@@ -508,7 +509,7 @@ void options(){
         for (int j = 0; j < i % 4; j++)
             printf(".");
         fflush(stdout);
-        Sleep(1000);
+        sleep_seconds(1);
     }
     exit(0);
     } else {
@@ -517,10 +518,7 @@ void options(){
 }
 int main(){
     srand(time(NULL));
-    struct stat st = {0};
-    if (stat("database", &st) == -1) {
-        system("mkdir database");
-    }
+    system("mkdir database");
     while (1){
         text_menu();
         options();
