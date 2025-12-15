@@ -1,4 +1,5 @@
 ﻿BANKING SYSTEM USER MANUAL:
+
 The system supports the following functions:
 1) Creating a new bank account
 2) Deleting an existing bank account
@@ -8,11 +9,12 @@ The system supports the following functions:
 All accounts data will be stored within text files in "database" folder.
 
 System Requirements:
-Operating System: Windows
-Compiler: Any standard C compiler
-Console / Terminal Access
 
-*This program is limited to Windows-specific systems as <windows.h> is used in the program.
+Operating System: Windows
+
+Compiler: Any standard C compiler
+
+Console / Terminal Access
 
 
 
@@ -43,10 +45,13 @@ Function remitting from accounts to accounts could be accessed with words: 5, re
 Function exiting the program could be accessed with words: 6, exit, quit, closeapp, close app, bye, goodbye
 
 **FOR ALL FUNCTIONS, PRESSING ENTER ON A BLANK INPUT RETURNS TO THE OPTION MENU
+
 *ACCOUNT TYPES [1, Savings, savings, save] [2, Current, current, curr] ARE VALID
+
 *ALL ACTIONS WILL BE LOGGED IN "database/transactions.log"
 
 CREATING BANK ACCOUNT:
+
 Step 1: Select option 1 from the menu
 
 Step 2: Enter your full name
@@ -74,6 +79,7 @@ Balance: RM 3032.50
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 DELETING BANK ACCOUNT:
+
 **ANY DELETED ACCOUNTS ARE NOT RECOVERABLE
 
 Step 1: Select option 2 from the menu
@@ -91,6 +97,7 @@ Step 6: Enter your PIN
 Information must match with the database for deletion to occur.
 
 DEPOSITING MONEY:
+
 Step 1: Select option 3 from the menu
 
 Step 2: Enter account number
@@ -105,6 +112,7 @@ Result:
 Balance for specific accounts in the "database" folder will be updated immediately
 
 WITHDRAWING MONEY:
+
 Step 1: Select option 4 from the menu
 
 Step 2: Enter account number
@@ -119,6 +127,7 @@ Result:
 Balance for specific accounts in the "database" folder will be updated immediately
 
 REMITTANCE:
+
 Step 1: Select option 5 from the menu
 
 Step 2: Enter sender account details
@@ -130,6 +139,7 @@ Step 4: Enter sender's PIN
 Step 5: Enter transfer amount
 
 Fees (deducted from sender's account):
+
 Savings TO Current is 2% fee
 
 Current TO Savings is 3% fee
@@ -145,6 +155,7 @@ Select option 6 from the menu
 Exiting the program will have a 3 second timer before the program successfully quits.
 
 LOGGING:
+
 All transactions are logged in "database/transactions.log"
 
 Example entries:
@@ -155,11 +166,13 @@ Remitted 100.00 from account 12345678 of type Savings to account 87654321 of typ
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Error handling:
+
 The system checks for
 1) Invalid Input
 2) Incorrect PIN
 3) Insufficient Balance
 4) Non-existent accounts
 Error messages are shown and the operation will always be safely cancelled
+
 
 
